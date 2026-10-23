@@ -58,6 +58,8 @@ button { font:inherit; cursor:pointer; }
 .record-status { margin-top:10px; font-size:13px; color:light-dark(#637168,#b2c0b5); min-height:19px; }
 .year-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .year-row h2 { font-size:20px; margin:0; }
+.stats-year-nav { display:flex; align-items:center; gap:10px; }
+.stats-year-nav button { width:34px; height:34px; border:1px solid light-dark(#dce6de,#3a493e); background:light-dark(#fff,#202b23); border-radius:10px; color:inherit; font-size:20px; }
 .year-count { font-size:34px; font-weight:850; color:var(--site-primary); letter-spacing:-.04em; }
 .year-count span { font-size:14px; font-weight:650; letter-spacing:0; }
 .note { font-size:12px; line-height:1.6; color:light-dark(#6d796f,#b3c0b6); margin:10px 2px 0; }
@@ -108,7 +110,7 @@ button { font:inherit; cursor:pointer; }
   </section>
   </div>
   <section class="card stats-view" id="statsView" hidden>
-    <div class="year-row"><div><div class="section-label">YEARLY SUMMARY</div><h2 id="statsYearTitle">2026년</h2></div><div class="year-count"><span id="statsYearCount">0</span><span>회</span></div></div>
+    <div class="year-row"><div><div class="section-label">YEARLY SUMMARY</div><div class="stats-year-nav"><button id="statsPrevYear" aria-label="이전 연도">‹</button><h2 id="statsYearTitle">2026년</h2><button id="statsNextYear" aria-label="다음 연도">›</button></div></div><div class="year-count"><span id="statsYearCount">0</span><span>회</span></div></div>
     <div class="month-stat-list" id="monthStatList"></div>
   </section>
   <section class="card">
@@ -219,6 +221,8 @@ button { font:inherit; cursor:pointer; }
     document.getElementById('statsTab').classList.add('active');
     document.getElementById('calendarTab').classList.remove('active');
   });
+  document.getElementById('statsPrevYear').addEventListener('click',()=>{viewYear--;render();});
+  document.getElementById('statsNextYear').addEventListener('click',()=>{viewYear++;render();});
   document.getElementById('prev').addEventListener('click',()=>{viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}selected=key(viewYear,viewMonth,1);render();});
   document.getElementById('next').addEventListener('click',()=>{viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}selected=key(viewYear,viewMonth,1);render();});
   document.getElementById('toggleDrink').addEventListener('click',()=>{
