@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>술 기록</title>
+<style>
+:root {
+  --site-primary: #176b4d;
+  --site-on-primary: #ffffff;
+  --site-secondary: #e5f2eb;
+  --site-on-secondary: #173c2e;
+  --site-background: #f4f7f4;
+  --site-on-background: #17231d;
+  --site-font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --site-font-heading: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --site-heading-scale: 1;
+  --site-spacing-scale: 1;
+  --site-radius-scale: 1;
+  --site-decoration-opacity: 1;
+  color-scheme: light dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--site-font-body); background: light-dark(#f4f7f4,#111713); color: light-dark(#17231d,#eaf2ec); }
+#app { min-height: 100vh; width: 100%; background-color: var(--site-background); color: var(--site-on-background); padding: calc(22px * var(--site-spacing-scale)) 16px 36px; }
+main { max-width: 620px; margin: 0 auto; }
+header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:22px; }
+.eyebrow { font-size:12px; font-weight:800; letter-spacing:.12em; color:var(--site-primary); }
+h1 { font-family:var(--site-font-heading); font-size:calc(30px * var(--site-heading-scale)); line-height:1.15; margin:6px 0 0; }
+.year { border:1px solid #d6e1d9; background:light-dark(#fff,#1b241e); border-radius:999px; padding:9px 12px; font-weight:700; }
+.card { background:light-dark(#fff,#1b241e); border:1px solid light-dark(#e0e8e2,#303b33); border-radius:calc(20px * var(--site-radius-scale)); padding:20px; margin-bottom:14px; box-shadow:0 6px 22px rgba(23,52,35,.045); }
+.section-label { color:light-dark(#64736a,#b0c0b5); font-size:13px; font-weight:700; }
+.stats { display:grid; grid-template-columns:1fr; gap:12px; margin-top:14px; }
+.stat { background:var(--site-secondary); color:var(--site-on-secondary); border-radius:15px; padding:15px; min-width:0; }
+.stat strong { display:block; font-size:clamp(28px,7vw,38px); line-height:1.1; margin:8px 0 5px; letter-spacing:-.04em; }
+.stat small { font-size:12px; opacity:.8; }
+.stat .unit { font-size:14px; font-weight:650; letter-spacing:0; }
+.month-nav { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:15px; }
+.month-nav h2 { font-size:20px; margin:0; }
+button { font:inherit; cursor:pointer; }
+.nav-btn { width:38px; height:38px; border:1px solid light-dark(#dce6de,#3a493e); background:light-dark(#fff,#202b23); border-radius:12px; color:inherit; font-size:20px; }
+.calendar { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+.weekday { text-align:center; font-size:12px; font-weight:700; color:light-dark(#758078,#adbbb0); padding:5px 0 9px; }
+.day { position:relative; min-height:54px; border:1px solid light-dark(#edf1ed,#303a33); border-radius:11px; background:light-dark(#fff,#202923); color:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:4px 0; }
+.day.empty { visibility:hidden; }
+.day .num { font-size:14px; }
+.day .mark { font-size:10px; line-height:1; font-weight:800; }
+.day.drunk { background:#fff0e9; border-color:#f1c3af; color:#a33b1c; }
+.day.today { outline:2px solid var(--site-primary); outline-offset:1px; }
+.day.selected { box-shadow:inset 0 0 0 2px var(--site-primary); }
+.legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:13px; color:light-dark(#66736a,#b6c3b9); font-size:12px; }
+.dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; background:#e16b45; }
+.dot.clear { background:#2c9669; }
+.actions { display:flex; gap:10px; margin-top:15px; }
+.action { flex:1; min-height:48px; border-radius:13px; border:1px solid light-dark(#d8e2da,#3a493e); font-weight:750; }
+.action.primary { background:var(--site-primary); color:var(--site-on-primary); border-color:var(--site-primary); }
+.action.secondary { background:light-dark(#fff,#202b23); color:inherit; }
+.record-status { margin-top:10px; font-size:13px; color:light-dark(#637168,#b2c0b5); min-height:19px; }
+.year-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.year-row h2 { font-size:20px; margin:0; }
+.stats-year-nav { display:flex; align-items:center; gap:10px; }
+.stats-year-nav button { width:34px; height:34px; border:1px solid light-dark(#dce6de,#3a493e); background:light-dark(#fff,#202b23); border-radius:10px; color:inherit; font-size:20px; }
+.year-count { font-size:34px; font-weight:850; color:var(--site-primary); letter-spacing:-.04em; }
+.year-count span { font-size:14px; font-weight:650; letter-spacing:0; }
+.note { font-size:12px; line-height:1.6; color:light-dark(#6d796f,#b3c0b6); margin:10px 2px 0; }
+.footer-actions { display:flex; gap:10px; margin-top:14px; }
+.footer-actions button { flex:1; padding:11px 8px; border:1px solid light-dark(#dce5de,#3a493e); background:light-dark(#fff,#202b23); color:inherit; border-radius:11px; font-size:12px; font-weight:700; }
+.toast { margin-top:10px; min-height:18px; font-size:12px; color:var(--site-primary); }
+.tabs { display:flex; gap:8px; margin-bottom:14px; }
+.tab-btn { flex:1; min-height:43px; border:1px solid light-dark(#d8e2da,#3a493e); background:light-dark(#fff,#202b23); color:inherit; border-radius:12px; font-weight:750; }
+.tab-btn.active { background:var(--site-primary); border-color:var(--site-primary); color:var(--site-on-primary); }
+.stats-view[hidden], .calendar-view[hidden] { display:none; }
+.month-stat-list { display:grid; gap:8px; margin-top:14px; }
+.month-stat-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; background:light-dark(#f4f7f4,#202b23); }
+.month-stat-row strong { color:var(--site-primary); }
+@media (max-width:390px) { #app {padding:18px 11px 28px;} .card{padding:15px;} .day{min-height:47px;border-radius:9px;} .calendar{gap:4px;} }
+</style>
+</head>
+<body>
+<div id="app">
+<main>
+  <header>
+    <div><div class="eyebrow">MY DRINKING LOG</div><h1>술 기록</h1></div>
+    <div class="year" id="yearBadge">2026년</div>
+  </header>
+  <section class="card" id="accountCard">
+    <div class="section-label">기기 간 실시간 동기화</div>
+    <p class="note" style="margin:8px 0 12px">PC와 휴대폰에서 같은 이메일 계정으로 로그인하면 기록이 동기화됩니다.</p>
+    <div id="authForm">
+      <input id="authEmail" type="email" autocomplete="username" placeholder="이메일" style="width:100%;padding:12px;border:1px solid #d8e2da;border-radius:10px;margin-bottom:8px;font:inherit">
+      <input id="authPassword" type="password" autocomplete="current-password" placeholder="비밀번호 (6자 이상)" style="width:100%;padding:12px;border:1px solid #d8e2da;border-radius:10px;margin-bottom:10px;font:inherit">
+      <div class="actions" style="margin-top:0">
+        <button class="action primary" id="loginBtn">로그인</button>
+        <button class="action secondary" id="signupBtn">계정 만들기</button>
+      </div>
+    </div>
+    <div id="signedInPanel" hidden>
+      <div id="signedInEmail" style="font-weight:700;overflow-wrap:anywhere"></div>
+      <div class="record-status" id="syncStatus">Firebase 연결 준비 중…</div>
+      <button class="action secondary" id="logoutBtn" style="width:100%;margin-top:8px">로그아웃</button>
+    </div>
+    <div class="toast" id="authMessage" aria-live="polite"></div>
+  </section>
+  <div class="tabs">
+    <button class="tab-btn active" id="calendarTab">달력</button>
+    <button class="tab-btn" id="statsTab">통계</button>
+  </div>
+  <div class="calendar-view" id="calendarView">
+  <section class="card">
+    <div class="section-label">이번 달 음주 기록</div>
+    <div class="stats">
+      <div class="stat"><small>이번 달 마신 날</small><strong id="monthCount">0<span class="unit">일</span></strong><small id="monthSub">이번 달 기록 기준</small></div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="month-nav">
+      <button class="nav-btn" id="prev" aria-label="이전 달">‹</button>
+      <h2 id="monthTitle">2026년 10월</h2>
+      <button class="nav-btn" id="next" aria-label="다음 달">›</button>
+    </div>
+    <div class="calendar" id="calendar"></div>
+    <div class="legend"><span><i class="dot"></i>술 마신 날</span><span><i class="dot clear"></i>선택한 날짜</span></div>
+    <div class="actions">
+      <button class="action primary" id="toggleDrink">🍺 오늘 술 마심 체크</button>
+      <button class="action secondary" id="clearDay">기록 취소</button>
+    </div>
+    <div class="record-status" id="recordStatus">날짜를 선택한 뒤 음주 여부를 기록하세요.</div>
+  </section>
+  </div>
+  <section class="card stats-view" id="statsView" hidden>
+    <div class="year-row"><div><div class="section-label">YEARLY SUMMARY</div><div class="stats-year-nav"><button id="statsPrevYear" aria-label="이전 연도">‹</button><h2 id="statsYearTitle">2026년</h2><button id="statsNextYear" aria-label="다음 연도">›</button></div></div><div class="year-count"><span id="statsYearCount">0</span><span>회</span></div></div>
+    <div class="month-stat-list" id="monthStatList"></div>
+  </section>
+  <section class="card">
+    <div class="year-row"><div><div class="section-label">YEARLY SUMMARY</div><h2 id="yearTitle">2026년 누적</h2></div><div class="year-count"><span id="annualCount">0</span><span>일</span></div></div>
+    <p class="note">술을 마신 날짜 수를 셉니다. 같은 날 여러 번 마셔도 하루로 계산합니다. 기록은 현재 브라우저에 저장됩니다. PC와 휴대폰에서 함께 보려면 한 기기에서 백업한 뒤 다른 기기에서 불러오세요.</p>
+    <div class="footer-actions">
+      <button id="exportBtn">기록 백업하기</button>
+      <button id="importBtn">백업 불러오기</button>
+      <button id="resetBtn">전체 기록 삭제</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+    <div class="toast" id="toast" aria-live="polite"></div>
+  </section>
+</main>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function() {
+  const firebaseConfig = {
+    apiKey: "AIzaSyAfV3mANHoyBH3lOq6cbHtqpmL-ecTA46k",
+    authDomain: "my-drinking-log.firebaseapp.com",
+    projectId: "my-drinking-log",
+    storageBucket: "my-drinking-log.firebasestorage.app",
+    messagingSenderId: "3946527388",
+    appId: "1:3946527388:web:fd86eac27b4eaa992e4b59",
+    measurementId: "G-2YHMG4XN1D"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  let currentUser = null;
+  let unsubscribeRecords = null;
+  let applyingRemote = false;
+  const today = new Date();
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth();
+  let selected = key(today.getFullYear(), today.getMonth(), today.getDate());
+  let records = {};
+  const storageKey = 'my_drinking_log_v1';
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) records = JSON.parse(saved) || {};
+  } catch (e) { records = {}; }
+
+  function key(y,m,d) { return y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'); }
+  function save() {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(records));
+    } catch (e) {
+      message('브라우저 저장 공간을 사용할 수 없습니다. 백업을 권장합니다.');
+    }
+
+    // Save local changes to Firestore for the signed-in user.
+    if (currentUser && !applyingRemote) {
+      const userId = currentUser.uid;
+      db.collection('users').doc(userId).set({
+        records: records,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true })
+      .then(() => {
+        if (currentUser && currentUser.uid === userId) {
+          setSyncStatus('Firebase 연결됨 · 기록 저장 완료');
+        }
+      })
+      .catch(err => {
+        setSyncStatus('클라우드 저장 실패: ' + friendlyError(err));
+      });
+    }
+  }
+  function isDrunk(k) { return records[k] === true; }
+  function monthKeys(y,m) {
+    const result = [];
+    Object.keys(records).forEach(k => {
+      const p = k.split('-').map(Number);
+      if (p[0] === y && p[1] === m+1 && records[k] === true) result.push(k);
+    });
+    return result;
+  }
+  function yearKeys(y) {
+    return Object.keys(records).filter(k => k.startsWith(y + '-') && records[k] === true);
+  }
+  function render() {
+    const first = new Date(viewYear, viewMonth, 1);
+    const last = new Date(viewYear, viewMonth + 1, 0);
+    document.getElementById('yearBadge').textContent = viewYear + '년';
+    document.getElementById('monthTitle').textContent = viewYear + '년 ' + (viewMonth+1) + '월';
+    document.getElementById('yearTitle').textContent = viewYear + '년 누적';
+    document.getElementById('monthCount').innerHTML = monthKeys(viewYear,viewMonth).length + '<span class="unit">일</span>';
+    document.getElementById('monthSub').textContent = (viewMonth+1) + '월 음주 기록';
+    document.getElementById('annualCount').textContent = yearKeys(viewYear).length;
+    document.getElementById('statsYearTitle').textContent = viewYear + '년';
+    document.getElementById('statsYearCount').textContent = yearKeys(viewYear).length;
+    const monthList = document.getElementById('monthStatList');
+    monthList.innerHTML = '';
+    for (let m=0;m<12;m++) {
+      const row = document.createElement('div');
+      row.className = 'month-stat-row';
+      const label = document.createElement('span'); label.textContent = (m+1) + '월';
+      const count = document.createElement('strong'); count.textContent = monthKeys(viewYear,m).length + '회';
+      row.append(label,count); monthList.appendChild(row);
+    }
+
+    const cal = document.getElementById('calendar');
+    cal.innerHTML = '';
+    ['일','월','화','수','목','금','토'].forEach((name,i) => {
+      const el = document.createElement('div');
+      el.className = 'weekday';
+      el.textContent = name;
+      if (i===0) el.style.color = '#c45d4b';
+      if (i===6) el.style.color = '#4777bd';
+      cal.appendChild(el);
+    });
+    for (let i=0;i<first.getDay();i++) {
+      const blank=document.createElement('div'); blank.className='day empty'; cal.appendChild(blank);
+    }
+    for (let d=1;d<=last.getDate();d++) {
+      const k=key(viewYear,viewMonth,d);
+      const el=document.createElement('button');
+      el.className='day';
+      if (isDrunk(k)) el.classList.add('drunk');
+      if (k===key(today.getFullYear(),today.getMonth(),today.getDate())) el.classList.add('today');
+      if (k===selected) el.classList.add('selected');
+      const n=document.createElement('span'); n.className='num'; n.textContent=d;
+      const mark=document.createElement('span'); mark.className='mark'; mark.textContent=isDrunk(k)?'마심':'';
+      el.append(n,mark);
+      el.setAttribute('aria-label', k + (isDrunk(k)?' 술 마신 날':''));
+      el.addEventListener('click',()=>{selected=k;render();});
+      cal.appendChild(el);
+    }
+    const currentIsDrink = isDrunk(selected);
+    document.getElementById('toggleDrink').textContent = currentIsDrink ? '✓ 음주 기록됨' : '🍺 선택한 날 술 마심 체크';
+    document.getElementById('recordStatus').textContent = selected + (currentIsDrink ? ' — 술 마신 날로 기록되어 있습니다.' : ' — 아직 음주 기록이 없습니다.');
+  }
+  function message(t) { document.getElementById('toast').textContent=t; }
+  document.getElementById('calendarTab').addEventListener('click',()=>{
+    document.getElementById('calendarView').hidden=false;
+    document.getElementById('statsView').hidden=true;
+    document.getElementById('calendarTab').classList.add('active');
+    document.getElementById('statsTab').classList.remove('active');
+  });
+  document.getElementById('statsTab').addEventListener('click',()=>{
+    document.getElementById('calendarView').hidden=true;
+    document.getElementById('statsView').hidden=false;
+    document.getElementById('statsTab').classList.add('active');
+    document.getElementById('calendarTab').classList.remove('active');
+  });
+  document.getElementById('statsPrevYear').addEventListener('click',()=>{viewYear--;render();});
+  document.getElementById('statsNextYear').addEventListener('click',()=>{viewYear++;render();});
+  document.getElementById('prev').addEventListener('click',()=>{viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}selected=key(viewYear,viewMonth,1);render();});
+  document.getElementById('next').addEventListener('click',()=>{viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}selected=key(viewYear,viewMonth,1);render();});
+  document.getElementById('toggleDrink').addEventListener('click',()=>{
+    if (isDrunk(selected)) delete records[selected]; else records[selected]=true;
+    save();render();message('기록을 저장했습니다.');
+  });
+  document.getElementById('clearDay').addEventListener('click',()=>{
+    if (records[selected]) { delete records[selected]; save(); render(); message('선택한 날짜의 기록을 취소했습니다.'); }
+    else message('취소할 기록이 없습니다.');
+  });
+  document.getElementById('exportBtn').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify({app:'술 기록',version:1,records:records},null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url;a.download='술기록-백업.json';a.click();URL.revokeObjectURL(url);
+    message('백업 파일을 내려받았습니다. 안전한 곳에 보관하세요.');
+  });
+  document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change',async e=>{
+    const file=e.target.files[0]; if(!file)return;
+    try {
+      const data=JSON.parse(await file.text());
+      const incoming=data.records || data;
+      if (!incoming || typeof incoming!=='object' || Array.isArray(incoming)) throw new Error('bad');
+      Object.keys(incoming).forEach(k=>{if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&incoming[k]===true)records[k]=true;});
+      save();render();message('백업 기록을 불러왔습니다.');
+    } catch(err) { message('백업 파일을 읽지 못했습니다.'); }
+    e.target.value='';
+  });
+  document.getElementById('resetBtn').addEventListener('click',()=>{
+    if (confirm('저장된 모든 음주 기록을 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) {
+      records={};save();render();message('모든 기록을 삭제했습니다.');
+    }
+  });
+  function setSyncStatus(text) {
+    const el = document.getElementById('syncStatus');
+    if (el) el.textContent = text;
+  }
+  function friendlyError(err) {
+    const code = err && err.code;
+    const messages = {
+      'auth/invalid-email': '이메일 주소를 확인해 주세요.',
+      'auth/missing-password': '비밀번호를 입력해 주세요.',
+      'auth/weak-password': '비밀번호는 6자 이상 입력해 주세요.',
+      'auth/email-already-in-use': '이미 가입된 이메일입니다. 로그인해 주세요.',
+      'auth/invalid-credential': '이메일 또는 비밀번호가 맞지 않습니다.',
+      'auth/user-not-found': '가입된 계정이 없습니다. 계정을 먼저 만들어 주세요.',
+      'auth/wrong-password': '비밀번호가 맞지 않습니다.',
+      'auth/network-request-failed': '인터넷 연결을 확인해 주세요.',
+      'permission-denied': 'Firestore 보안 규칙을 확인해 주세요.'
+    };
+    return messages[code] || (err && err.message) || '알 수 없는 오류가 발생했습니다.';
+  }
+  function authMessage(text) {
+    document.getElementById('authMessage').textContent = text;
+  }
+  async function startSync(user) {
+    if (unsubscribeRecords) { unsubscribeRecords(); unsubscribeRecords = null; }
+    currentUser = user;
+    document.getElementById('authForm').hidden = !!user;
+    document.getElementById('signedInPanel').hidden = !user;
+    if (!user) {
+      document.getElementById('signedInEmail').textContent = '';
+      setSyncStatus('로그인하면 기기 간 동기화가 시작됩니다.');
+      render();
+      return;
+    }
+    document.getElementById('signedInEmail').textContent = user.email || '로그인됨';
+    setSyncStatus('클라우드 기록 확인 중…');
+    const docRef = db.collection('users').doc(user.uid);
+    try {
+      const snap = await docRef.get();
+      if (!snap.exists) {
+        await docRef.set({ records: records, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      } else {
+        const cloud = snap.data().records || {};
+        // Preserve old local-only dates while keeping cloud values for existing dates.
+        records = Object.assign({}, records, cloud);
+        try { localStorage.setItem(storageKey, JSON.stringify(records)); } catch (e) {}
+        await docRef.set({
+          records: records,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        render();
+      }
+      unsubscribeRecords = docRef.onSnapshot(snapshot => {
+        if (!snapshot.exists) return;
+        const cloudRecords = snapshot.data().records || {};
+        applyingRemote = true;
+        records = cloudRecords;
+        try { localStorage.setItem(storageKey, JSON.stringify(records)); } catch (e) {}
+        render();
+        applyingRemote = false;
+        setSyncStatus('Firebase 연결됨 · 실시간 동기화 중');
+      }, err => setSyncStatus('동기화 오류: ' + friendlyError(err)));
+    } catch (err) {
+      setSyncStatus('연결 실패: ' + friendlyError(err));
+    }
+  }
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+      authMessage('로그인되었습니다.');
+    } catch (err) { authMessage(friendlyError(err)); }
+  });
+  document.getElementById('signupBtn').addEventListener('click', async () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    try {
+      await auth.createUserWithEmailAndPassword(email, password);
+      authMessage('계정이 만들어졌습니다. 다른 기기에서도 같은 계정으로 로그인하세요.');
+    } catch (err) { authMessage(friendlyError(err)); }
+  });
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try { await auth.signOut(); authMessage('로그아웃되었습니다.'); }
+    catch (err) { authMessage(friendlyError(err)); }
+  });
+  auth.onAuthStateChanged(user => { startSync(user); });
+  render();
+})();
+</script>
+</body>
+</html>
