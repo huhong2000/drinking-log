@@ -177,8 +177,28 @@ button { font:inherit; cursor:pointer; }
 
   function key(y,m,d) { return y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'); }
   function save() {
-    try { localStorage.setItem(storageKey, JSON.stringify(records)); }
-    catch (e) { message('브라우저 저장 공간을 사용할 수 없습니다. 백업을 권장합니다.'); }
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(records));
+    } catch (e) {
+      message('브라우저 저장 공간을 사용할 수 없습니다. 백업을 권장합니다.');
+    }
+
+    // Save local changes to Firestore for the signed-in user.
+    if (currentUser && !applyingRemote) {
+      const userId = currentUser.uid;
+      db.collection('users').doc(userId).set({
+        records: records,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true })
+      .then(() => {
+        if (currentUser && currentUser.uid === userId) {
+          setSyncStatus('Firebase 연결됨 · 기록 저장 완료');
+        }
+      })
+      .catch(err => {
+        setSyncStatus('클라우드 저장 실패: ' + friendlyError(err));
+      });
+    }
   }
   function isDrunk(k) { return records[k] === true; }
   function monthKeys(y,m) {
@@ -334,9 +354,13 @@ button { font:inherit; cursor:pointer; }
         await docRef.set({ records: records, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
       } else {
         const cloud = snap.data().records || {};
-        // Merge local and cloud entries so existing browser records are not discarded.
-        records = Object.assign({}, cloud, records);
-        save();
+        // Preserve old local-only dates while keeping cloud values for existing dates.
+        records = Object.assign({}, records, cloud);
+        try { localStorage.setItem(storageKey, JSON.stringify(records)); } catch (e) {}
+        await docRef.set({
+          records: records,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
         render();
       }
       unsubscribeRecords = docRef.onSnapshot(snapshot => {
