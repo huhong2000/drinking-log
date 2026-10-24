@@ -289,6 +289,16 @@ button { font:inherit; cursor:pointer; }
     const day = selected;
     const wasDrunk = isDrunk(day);
 
+    const dateLabel = day.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$1년 $2월 $3일');
+    const confirmText = wasDrunk
+      ? `${dateLabel}의 음주 기록을 취소할까요?`
+      : `${dateLabel}을(를) 음주한 날로 기록할까요?`;
+    const confirmed = window.confirm(confirmText);
+    if (!confirmed) {
+      toggleBusy = false;
+      return;
+    }
+
     if (wasDrunk) {
       delete records[day];
     } else {
