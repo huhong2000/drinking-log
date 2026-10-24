@@ -164,6 +164,7 @@ button { font:inherit; cursor:pointer; }
   let currentUser = null;
   let unsubscribeRecords = null;
   let applyingRemote = false;
+  let localWriteInProgress = false;
   const today = new Date();
   let viewYear = today.getFullYear();
   let viewMonth = today.getMonth();
@@ -281,42 +282,27 @@ button { font:inherit; cursor:pointer; }
   document.getElementById('statsNextYear').addEventListener('click',()=>{viewYear++;render();});
   document.getElementById('prev').addEventListener('click',()=>{viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}selected=key(viewYear,viewMonth,1);render();});
   document.getElementById('next').addEventListener('click',()=>{viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}selected=key(viewYear,viewMonth,1);render();});
+  let toggleBusy = false;
   document.getElementById('toggleDrink').addEventListener('click', async ()=>{
+    if (toggleBusy) return;
+    toggleBusy = true;
     const day = selected;
     const wasDrunk = isDrunk(day);
 
-    // Change the selected date locally first so the button responds immediately.
     if (wasDrunk) {
       delete records[day];
     } else {
       records[day] = true;
     }
 
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(records));
-    } catch (e) {}
-
     render();
     message(wasDrunk ? '음주 기록을 취소했습니다.' : '음주 기록을 저장했습니다.');
+    save();
 
-    // Save the latest full record set to the signed-in user's cloud document.
-    if (currentUser && !applyingRemote) {
-      const userId = currentUser.uid;
-      const recordsToSave = Object.assign({}, records);
-      setSyncStatus('변경 사항 저장 중…');
-      try {
-        await db.collection('users').doc(userId).set({
-          records: recordsToSave,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        if (currentUser && currentUser.uid === userId) {
-          setSyncStatus('Firebase 연결됨 · 기록 저장 완료');
-        }
-      } catch (err) {
-        setSyncStatus('클라우드 저장 실패: ' + friendlyError(err));
-        message('클라우드 저장에 실패했습니다. 인터넷 연결을 확인해 주세요.');
-      }
-    }
+    // Wait briefly for the existing save() function's Firestore write to settle
+    // before accepting another click, reducing overlapping whole-record writes.
+    await new Promise(resolve => setTimeout(resolve, 500));
+    toggleBusy = false;
   });
   document.getElementById('clearDay').addEventListener('click',()=>{
     if (records[selected]) { delete records[selected]; save(); render(); message('선택한 날짜의 기록을 취소했습니다.'); }
@@ -400,7 +386,7 @@ button { font:inherit; cursor:pointer; }
         if (!snapshot.exists) return;
         // Do not let an older server snapshot overwrite a local change that is
         // still waiting to be written to Firestore.
-        if (snapshot.metadata && snapshot.metadata.hasPendingWrites) {
+        if (localWriteInProgress || (snapshot.metadata && snapshot.metadata.hasPendingWrites)) {
           setSyncStatus('변경 사항 저장 중…');
           return;
         }
