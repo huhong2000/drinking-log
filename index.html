@@ -74,44 +74,64 @@ button { font:inherit; cursor:pointer; }
 .month-stat-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; background:light-dark(#f4f7f4,#202b23); }
 .month-stat-row strong { color:var(--site-primary); }
 @media (max-width:390px) { #app {padding:18px 11px 28px;} .card{padding:15px;} .day{min-height:47px;border-radius:9px;} .calendar{gap:4px;} }
+
+/* Layout update: header tabs, calendar first, monthly count + sync card below */
+.main-header { display:grid; grid-template-columns:auto minmax(180px,1fr) auto; align-items:center; gap:12px; }
+.main-header .brand { min-width:0; }
+.header-tabs { margin:0; justify-content:center; gap:6px; }
+.header-tabs .tab-btn { flex:0 1 auto; min-width:54px; min-height:34px; padding:5px 10px; border-radius:0; }
+.header-tabs .logout-tab { display:none; }
+.account-summary { display:grid; grid-template-columns:128px minmax(0,1fr); gap:22px; align-items:stretch; margin-top:8px; }
+.month-summary { background:light-dark(#e5f2eb,#1d3026); border-radius:12px; padding:14px 15px; display:flex; flex-direction:column; justify-content:center; }
+.month-summary .section-label { font-size:11px; }
+.month-summary .stat { padding:0; }
+.month-summary .stat strong { font-size:36px; margin:7px 0 3px; }
+.month-summary .stat small:last-child { font-size:11px; }
+.sync-summary { min-width:0; align-self:center; }
+.sync-summary > .section-label { margin-bottom:8px; }
+.sync-summary .note { margin-top:0 !important; margin-bottom:10px !important; }
+.sync-summary #signedInPanel { display:block; }
+.sync-summary #signedInPanel[hidden], .sync-summary #authForm[hidden] { display:none !important; }
+.sync-summary #logoutBtn { display:none; }
+@media (max-width:600px) {
+  #app { padding:10px 10px 20px; }
+  .main-header { grid-template-columns:minmax(0,1fr) auto; gap:7px; margin-bottom:10px; }
+  .main-header .brand { grid-column:1; grid-row:1; }
+  .main-header .year { grid-column:2; grid-row:1; align-self:start; }
+  .header-tabs { grid-column:1 / -1; grid-row:2; justify-content:flex-start; }
+  .header-tabs .tab-btn { min-height:31px; font-size:12px; }
+  .header-tabs .logout-tab { display:block; }
+  .account-summary { grid-template-columns:112px minmax(0,1fr); gap:12px; padding:10px; }
+  .month-summary { padding:10px; }
+  .month-summary .stat strong { font-size:29px; }
+  .sync-summary .note { font-size:11px; line-height:1.45; }
+  .sync-summary #signedInEmail { font-size:12px; }
+  .sync-summary #syncStatus { font-size:11px; }
+}
+@media (max-width:380px) {
+  .account-summary { grid-template-columns:95px minmax(0,1fr); gap:8px; padding:8px; }
+  .month-summary { padding:8px; }
+  .month-summary .stat strong { font-size:25px; }
+  .header-tabs { gap:4px; }
+  .header-tabs .tab-btn { min-width:47px; padding:4px 7px; }
+}
+
 </style>
 </head>
 <body>
 <div id="app">
 <main>
-  <header>
-    <div><div class="eyebrow">MY DRINKING LOG</div><h1>술 기록</h1></div>
+  <header class="main-header">
+    <div class="brand"><div class="eyebrow">MY DRINKING LOG</div><h1>술 기록</h1></div>
+    <div class="tabs header-tabs">
+      <button class="tab-btn active" id="calendarTab">달력</button>
+      <button class="tab-btn" id="statsTab">통계</button>
+      <button class="tab-btn logout-tab" id="headerLogoutBtn" type="button">로그아웃</button>
+    </div>
     <div class="year" id="yearBadge">2026년</div>
   </header>
-  <section class="card" id="accountCard">
-    <div class="section-label">기기 간 실시간 동기화</div>
-    <p class="note" style="margin:8px 0 12px">PC와 휴대폰에서 같은 이메일 계정으로 로그인하면 기록이 동기화됩니다.</p>
-    <div id="authForm">
-      <input id="authEmail" type="email" autocomplete="username" placeholder="이메일" style="width:100%;padding:12px;border:1px solid #d8e2da;border-radius:10px;margin-bottom:8px;font:inherit">
-      <input id="authPassword" type="password" autocomplete="current-password" placeholder="비밀번호 (6자 이상)" style="width:100%;padding:12px;border:1px solid #d8e2da;border-radius:10px;margin-bottom:10px;font:inherit">
-      <div class="actions" style="margin-top:0">
-        <button class="action primary" id="loginBtn">로그인</button>
-        <button class="action secondary" id="signupBtn">계정 만들기</button>
-      </div>
-    </div>
-    <div id="signedInPanel" hidden>
-      <div id="signedInEmail" style="font-weight:700;overflow-wrap:anywhere"></div>
-      <div class="record-status" id="syncStatus">Firebase 연결 준비 중…</div>
-      <button class="action secondary" id="logoutBtn" style="width:100%;margin-top:8px">로그아웃</button>
-    </div>
-    <div class="toast" id="authMessage" aria-live="polite"></div>
-  </section>
-  <div class="tabs">
-    <button class="tab-btn active" id="calendarTab">달력</button>
-    <button class="tab-btn" id="statsTab">통계</button>
-  </div>
+
   <div class="calendar-view" id="calendarView">
-  <section class="card">
-    <div class="section-label">이번 달 음주 기록</div>
-    <div class="stats">
-      <div class="stat"><small>이번 달 마신 날</small><strong id="monthCount">0<span class="unit">일</span></strong><small id="monthSub">이번 달 기록 기준</small></div>
-    </div>
-  </section>
   <section class="card">
     <div class="month-nav">
       <button class="nav-btn" id="prev" aria-label="이전 달">‹</button>
@@ -127,6 +147,30 @@ button { font:inherit; cursor:pointer; }
     <div class="record-status" id="recordStatus">날짜를 선택한 뒤 음주 여부를 기록하세요.</div>
   </section>
   </div>
+  <section class="card account-summary" id="accountCard">
+    <div class="month-summary">
+      <div class="section-label">이번 달 마신 날</div>
+      <div class="stat"><strong id="monthCount">0<span class="unit">일</span></strong><small id="monthSub">이번 달 기록 기준</small></div>
+    </div>
+    <div class="sync-summary">
+      <div class="section-label">기기 간 실시간 동기화</div>
+    <p class="note" style="margin:8px 0 12px">PC와 휴대폰에서 같은 이메일 계정으로 로그인하면 기록이 동기화됩니다.</p>
+    <div id="authForm">
+      <input id="authEmail" type="email" autocomplete="username" placeholder="이메일" style="width:100%;padding:12px;border:1px solid #d8e2da;border-radius:10px;margin-bottom:8px;font:inherit">
+      <input id="authPassword" type="password" autocomplete="current-password" placeholder="비밀번호 (6자 이상)" style="width:100%;padding:12px;border:1px solid #d8e2da;border-radius:10px;margin-bottom:10px;font:inherit">
+      <div class="actions" style="margin-top:0">
+        <button class="action primary" id="loginBtn">로그인</button>
+        <button class="action secondary" id="signupBtn">계정 만들기</button>
+      </div>
+    </div>
+    <div id="signedInPanel" hidden>
+      <div id="signedInEmail" style="font-weight:700;overflow-wrap:anywhere"></div>
+      <div class="record-status" id="syncStatus">Firebase 연결 준비 중…</div>
+      <button class="action secondary" id="logoutBtn" style="width:100%;margin-top:8px">로그아웃</button>
+    </div>
+    <div class="toast" id="authMessage" aria-live="polite"></div>
+    </div>
+  </section>
   <section class="card stats-view" id="statsView" hidden>
     <div class="year-row"><div><div class="section-label">YEARLY SUMMARY</div><div class="stats-year-nav"><button id="statsPrevYear" aria-label="이전 연도">‹</button><h2 id="statsYearTitle">2026년</h2><button id="statsNextYear" aria-label="다음 연도">›</button></div></div><div class="year-count"><span id="statsYearCount">0</span><span>회</span></div></div>
     <div class="month-stat-list" id="monthStatList"></div>
@@ -431,6 +475,7 @@ button { font:inherit; cursor:pointer; }
       authMessage('계정이 만들어졌습니다. 다른 기기에서도 같은 계정으로 로그인하세요.');
     } catch (err) { authMessage(friendlyError(err)); }
   });
+  document.getElementById('headerLogoutBtn')?.addEventListener('click', () => document.getElementById('logoutBtn').click());
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     try { await auth.signOut(); authMessage('로그아웃되었습니다.'); }
     catch (err) { authMessage(friendlyError(err)); }
